@@ -19,6 +19,7 @@ app = FastAPI(title="Hemut Q&A API")
 allowed_origins = [
     "http://localhost:3000",
     "https://hemut-kuh3010b5-mugdhazopes-projects.vercel.app",
+    "https://hemut-qna-git-main-mugdhazopes-projects.vercel.app",  # New Vercel URL
     "https://vercel.app",
     "*"  # Temporary fix - allow all origins
 ]
