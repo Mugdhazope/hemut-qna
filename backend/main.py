@@ -31,11 +31,20 @@ print(f"🌐 CORS allowed origins: {allowed_origins}")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Temporary - allow all origins to fix CORS immediately
+    allow_origins=["*"],  # Allow all origins
     allow_credentials=False,  # Must be False when using "*"
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# Add explicit CORS headers for debugging
+@app.middleware("http")
+async def add_cors_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 # Check environment variables with defaults
 MONGODB_URL = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL")
@@ -129,13 +138,18 @@ async def ping():
 async def cors_test():
     return {
         "message": "CORS test successful",
-        "allowed_origins": [
-            "http://localhost:3000",
-            "https://hemut-kuh3010b5-mugdhazopes-projects.vercel.app",
-            "https://*.vercel.app",
-        ],
-        "timestamp": datetime.utcnow().isoformat()
+        "allowed_origins": ["*"],
+        "timestamp": datetime.utcnow().isoformat(),
+        "cors_enabled": True
     }
+
+@app.options("/api/register")
+async def register_options():
+    return {"message": "CORS preflight for register"}
+
+@app.options("/api/login") 
+async def login_options():
+    return {"message": "CORS preflight for login"}
 
 def create_access_token(data: dict):
     to_encode = data.copy()
