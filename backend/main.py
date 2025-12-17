@@ -32,6 +32,16 @@ if missing:
 client = AsyncIOMotorClient(MONGODB_URL)
 db = client[DATABASE_NAME]
 
+@app.on_event("startup")
+async def startup_event():
+    try:
+        # Test database connection on startup
+        await client.admin.command('ping')
+        print("✅ Connected to MongoDB successfully")
+    except Exception as e:
+        print(f"❌ Failed to connect to MongoDB: {e}")
+        # Don't exit, let the app start anyway for debugging
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer(auto_error=False)
 
@@ -56,8 +66,17 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 @app.get("/")
-async def health_check():
-    return {"status": "healthy", "message": "Hemut Q&A API is running"}
+async def root():
+    return {
+        "status": "healthy", 
+        "message": "Hemut Q&A API is running",
+        "version": "1.0.0",
+        "endpoints": {
+            "health": "/health",
+            "questions": "/api/questions",
+            "docs": "/docs"
+        }
+    }
 
 @app.get("/health")
 async def health():
@@ -67,6 +86,11 @@ async def health():
         return {"status": "healthy", "database": "connected"}
     except Exception as e:
         return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
+
+@app.get("/ping")
+async def ping():
+    # Simple endpoint that doesn't require database
+    return {"status": "ok", "message": "pong"}
 
 def create_access_token(data: dict):
     to_encode = data.copy()
