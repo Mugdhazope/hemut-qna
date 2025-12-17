@@ -23,10 +23,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MONGODB_URL = os.getenv("MONGODB_URL")
-DATABASE_NAME = os.getenv("DATABASE_NAME")
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
+required_envs = ["MONGODB_URL", "DATABASE_NAME", "SECRET_KEY", "ALGORITHM", "ACCESS_TOKEN_EXPIRE_MINUTES"]
+missing = [e for e in required_envs if not os.getenv(e)]
+
+if missing:
+    raise RuntimeError(f"Missing environment variables: {missing}")
 
 client = AsyncIOMotorClient(MONGODB_URL)
 db = client[DATABASE_NAME]
@@ -69,7 +70,8 @@ async def health():
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")))
+    EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+    expire = datetime.utcnow() + timedelta(minutes=EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
