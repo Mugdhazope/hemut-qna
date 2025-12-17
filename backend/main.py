@@ -23,24 +23,43 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-required_envs = ["MONGODB_URL", "DATABASE_NAME", "SECRET_KEY", "ALGORITHM", "ACCESS_TOKEN_EXPIRE_MINUTES"]
-missing = [e for e in required_envs if not os.getenv(e)]
+# Check environment variables with defaults
+MONGODB_URL = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL")
+DATABASE_NAME = os.getenv("DATABASE_NAME", "hemut_qa")
+SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key-for-development-only")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
-if missing:
-    raise RuntimeError(f"Missing environment variables: {missing}")
+if not MONGODB_URL:
+    print("⚠️  Warning: MONGODB_URL not found. App may not work properly.")
+    MONGODB_URL = "mongodb://localhost:27017"  # Fallback for development
+
+print(f"🔧 Environment check:")
+print(f"   MONGODB_URL: {'✅ Set' if MONGODB_URL else '❌ Missing'}")
+print(f"   DATABASE_NAME: {DATABASE_NAME}")
+print(f"   SECRET_KEY: {'✅ Set' if SECRET_KEY != 'fallback-secret-key-for-development-only' else '⚠️  Using fallback'}")
+print(f"   ALGORITHM: {ALGORITHM}")
+print(f"   ACCESS_TOKEN_EXPIRE_MINUTES: {ACCESS_TOKEN_EXPIRE_MINUTES}")
 
 client = AsyncIOMotorClient(MONGODB_URL)
 db = client[DATABASE_NAME]
 
 @app.on_event("startup")
 async def startup_event():
+    print("🚀 Starting Hemut Q&A API...")
     try:
         # Test database connection on startup
         await client.admin.command('ping')
         print("✅ Connected to MongoDB successfully")
+        
+        # Test collections
+        collections = await db.list_collection_names()
+        print(f"📁 Available collections: {collections}")
+        
     except Exception as e:
         print(f"❌ Failed to connect to MongoDB: {e}")
-        # Don't exit, let the app start anyway for debugging
+        print("⚠️  App will continue without database connection")
+        print("🔧 Check MONGODB_URL environment variable")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer(auto_error=False)
