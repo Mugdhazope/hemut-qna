@@ -19,7 +19,8 @@ app = FastAPI(title="Hemut Q&A API")
 allowed_origins = [
     "http://localhost:3000",
     "https://hemut-kuh3010b5-mugdhazopes-projects.vercel.app",
-    "https://*.vercel.app",
+    "https://vercel.app",
+    "*"  # Temporary fix - allow all origins
 ]
 
 # Add environment-based origins
@@ -30,8 +31,8 @@ print(f"🌐 CORS allowed origins: {allowed_origins}")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_origins=["*"],  # Temporary - allow all origins to fix CORS immediately
+    allow_credentials=False,  # Must be False when using "*"
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
