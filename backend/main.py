@@ -15,9 +15,22 @@ load_dotenv()
 
 app = FastAPI(title="Hemut Q&A API")
 
+# CORS configuration for production
+allowed_origins = [
+    "http://localhost:3000",
+    "https://hemut-kuh3010b5-mugdhazopes-projects.vercel.app",
+    "https://*.vercel.app",
+]
+
+# Add environment-based origins
+if os.getenv("FRONTEND_URL"):
+    allowed_origins.append(os.getenv("FRONTEND_URL"))
+
+print(f"🌐 CORS allowed origins: {allowed_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
@@ -110,6 +123,18 @@ async def health():
 async def ping():
     # Simple endpoint that doesn't require database
     return {"status": "ok", "message": "pong"}
+
+@app.get("/cors-test")
+async def cors_test():
+    return {
+        "message": "CORS test successful",
+        "allowed_origins": [
+            "http://localhost:3000",
+            "https://hemut-kuh3010b5-mugdhazopes-projects.vercel.app",
+            "https://*.vercel.app",
+        ],
+        "timestamp": datetime.utcnow().isoformat()
+    }
 
 def create_access_token(data: dict):
     to_encode = data.copy()
